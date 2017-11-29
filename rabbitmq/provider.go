@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"log"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -69,6 +70,12 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_CACERT", ""),
 			},
+
+			"permissions_for": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_VHOST", ""),
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -92,6 +99,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var endpoint = d.Get("endpoint").(string)
 	var insecure = d.Get("insecure").(bool)
 	var cacertFile = d.Get("cacert_file").(string)
+	var vhost = d.Get("permissions_for").(string)
 
 	// Configure TLS/SSL:
 	// Ignore self-signed cert warnings
@@ -117,6 +125,24 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	rmqc, err := rabbithole.NewTLSClient(endpoint, username, password, transport)
 	if err != nil {
 		return nil, err
+	}
+
+	if vhost != "" {
+		log.Printf("RabbitMQ: Setting vhost permissions for %s.", vhost)
+		perms := rabbithole.Permissions{}
+		perms.Configure = ".*"
+		perms.Read = ".*"
+		perms.Write = ".*"
+		resp, err := rmqc.UpdatePermissionsIn(vhost, username, perms)
+		log.Printf("[DEBUG] RabbitMQ: Permission response: %#v", resp)
+
+		if err != nil {
+			log.Printf("[WARN] RabbitMQ: Permission error: %#", err)
+		}
+
+		if resp.StatusCode >= 400 {
+			log.Printf("[WARN] RabbitMQ: Permission response: %s", resp.Status)
+		}
 	}
 
 	return rmqc, nil
