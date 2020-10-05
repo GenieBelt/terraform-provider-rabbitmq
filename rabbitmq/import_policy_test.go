@@ -3,9 +3,9 @@ package rabbitmq
 import (
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccPolicy_importBasic(t *testing.T) {
@@ -17,14 +17,14 @@ func TestAccPolicy_importBasic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccPolicyCheckDestroy(&policy),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccPolicyConfig_basic,
 				Check: testAccPolicyCheck(
 					resourceName, &policy,
 				),
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,

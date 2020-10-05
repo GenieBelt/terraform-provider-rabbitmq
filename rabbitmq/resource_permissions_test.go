@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccPermissions(t *testing.T) {
@@ -18,14 +18,51 @@ func TestAccPermissions(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccPermissionsCheckDestroy(&permissionInfo),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccPermissionsConfig_basic,
 				Check: testAccPermissionsCheck(
 					"rabbitmq_permissions.test", &permissionInfo,
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccPermissionsConfig_update,
+				Check: testAccPermissionsCheck(
+					"rabbitmq_permissions.test", &permissionInfo,
+				),
+			},
+		},
+	})
+}
+
+func TestAccPermissions_Empty(t *testing.T) {
+
+	configCreate := `
+resource "rabbitmq_vhost" "test" {
+    name = "test"
+}
+
+resource "rabbitmq_user" "test" {
+    name = "mctest"
+    password = "foobar"
+}
+
+resource "rabbitmq_permissions" "test" {
+    user = rabbitmq_user.test.name
+    vhost = rabbitmq_vhost.test.name
+    permissions {
+        configure = ""
+        write = ""
+        read = ""
+    }
+}`
+	var permissionInfo rabbithole.PermissionInfo
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccPermissionsCheckDestroy(&permissionInfo),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
 				Check: testAccPermissionsCheck(
 					"rabbitmq_permissions.test", &permissionInfo,
 				),

@@ -11,40 +11,44 @@ Requirements
 ------------
 
 -	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
--	[Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
+-	[Go](https://golang.org/doc/install) 1.11 (to build the provider plugin)
 
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/hashicorp/terraform-provider-$PROVIDER_NAME`
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-rabbitmq`
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/hashicorp; cd $GOPATH/src/github.com/hashicorp
-$ git clone git@github.com:hashicorp/terraform-provider-$PROVIDER_NAME
+$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
+$ git clone git@github.com:terraform-providers/terraform-provider-rabbitmq
 ```
 
 Enter the provider directory and build the provider
 
 ```sh
-$ cd $GOPATH/src/github.com/hashicorp/terraform-provider-$PROVIDER_NAME
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-rabbitmq
 $ make build
 ```
 
 Using the provider
-----------------------
-## Fill in for each provider
+------------------
+
+The provider supports verions `3.8.x` and `3.7.x` of RabbitMQ. It may still work with version`3.6.x`, however this version is no longer supported.
+
+For information on RabbitMQ versions, see the RabbitMQ [version documentation](https://www.rabbitmq.com/versions.html) and [changelog](https://www.rabbitmq.com/changelog.html).
+
 
 Developing the Provider
----------------------------
+-----------------------
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.8+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.11+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 
 To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 ```sh
 $ make bin
 ...
-$ $GOPATH/bin/terraform-provider-$PROVIDER_NAME
+$ $GOPATH/bin/terraform-provider-rabbitmq
 ...
 ```
 

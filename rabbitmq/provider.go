@@ -7,17 +7,17 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"log"
 )
 
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"endpoint": &schema.Schema{
+			"endpoint": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_ENDPOINT", nil),
@@ -31,7 +31,7 @@ func Provider() terraform.ResourceProvider {
 				},
 			},
 
-			"username": &schema.Schema{
+			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_USERNAME", nil),
@@ -45,7 +45,7 @@ func Provider() terraform.ResourceProvider {
 				},
 			},
 
-			"password": &schema.Schema{
+			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_PASSWORD", nil),
@@ -59,16 +59,27 @@ func Provider() terraform.ResourceProvider {
 				},
 			},
 
-			"insecure": &schema.Schema{
+			"insecure": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_INSECURE", nil),
 			},
 
-			"cacert_file": &schema.Schema{
+			"cacert_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_CACERT", ""),
+			},
+
+			"clientcert_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_CLIENTCERT", ""),
+			},
+			"clientkey_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_CLIENTKEY", ""),
 			},
 
 			"permissions_for": &schema.Schema{
@@ -79,13 +90,16 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"rabbitmq_binding":     resourceBinding(),
-			"rabbitmq_exchange":    resourceExchange(),
-			"rabbitmq_permissions": resourcePermissions(),
-			"rabbitmq_policy":      resourcePolicy(),
-			"rabbitmq_queue":       resourceQueue(),
-			"rabbitmq_user":        resourceUser(),
-			"rabbitmq_vhost":       resourceVhost(),
+			"rabbitmq_binding":             resourceBinding(),
+			"rabbitmq_exchange":            resourceExchange(),
+			"rabbitmq_permissions":         resourcePermissions(),
+			"rabbitmq_topic_permissions":   resourceTopicPermissions(),
+			"rabbitmq_federation_upstream": resourceFederationUpstream(),
+			"rabbitmq_policy":              resourcePolicy(),
+			"rabbitmq_queue":               resourceQueue(),
+			"rabbitmq_user":                resourceUser(),
+			"rabbitmq_vhost":               resourceVhost(),
+			"rabbitmq_shovel":              resourceShovel(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -99,6 +113,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var endpoint = d.Get("endpoint").(string)
 	var insecure = d.Get("insecure").(bool)
 	var cacertFile = d.Get("cacert_file").(string)
+	var clientcertFile = d.Get("clientcert_file").(string)
+	var clientkeyFile = d.Get("clientkey_file").(string)
 	var vhost = d.Get("permissions_for").(string)
 
 	// Configure TLS/SSL:
@@ -116,12 +132,19 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		caCertPool.AppendCertsFromPEM(caCert)
 		tlsConfig.RootCAs = caCertPool
 	}
+	if clientcertFile != "" && clientkeyFile != "" {
+		clientPair, err := tls.LoadX509KeyPair(clientcertFile, clientkeyFile)
+		if err != nil {
+			return nil, err
+		}
+		tlsConfig.Certificates = []tls.Certificate{clientPair}
+	}
 	if insecure {
 		tlsConfig.InsecureSkipVerify = true
 	}
 
 	// Connect to RabbitMQ management interface
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	transport := &http.Transport{TLSClientConfig: tlsConfig, Proxy: http.ProxyFromEnvironment}
 	rmqc, err := rabbithole.NewTLSClient(endpoint, username, password, transport)
 	if err != nil {
 		return nil, err

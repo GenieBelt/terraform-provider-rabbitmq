@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccExchange(t *testing.T) {
@@ -18,7 +18,7 @@ func TestAccExchange(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccExchangeCheckDestroy(&exchangeInfo),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccExchangeConfig_basic,
 				Check: testAccExchangeCheck(
 					"rabbitmq_exchange.test", &exchangeInfo,

@@ -3,9 +3,9 @@ package rabbitmq
 import (
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccPermissions_importBasic(t *testing.T) {
@@ -17,14 +17,14 @@ func TestAccPermissions_importBasic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccPermissionsCheckDestroy(&permissionInfo),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccPermissionsConfig_basic,
 				Check: testAccPermissionsCheck(
 					resourceName, &permissionInfo,
 				),
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
