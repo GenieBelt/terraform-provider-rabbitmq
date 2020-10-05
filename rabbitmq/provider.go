@@ -157,14 +157,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		perms.Read = ".*"
 		perms.Write = ".*"
 		resp, err := rmqc.UpdatePermissionsIn(vhost, username, perms)
-		log.Printf("[DEBUG] RabbitMQ: Permission response: %#v", resp)
+		log.Printf("[DEBUG] RabbitMQ: Permission response: %+v", resp)
 
 		if err != nil {
-			log.Printf("[WARN] RabbitMQ: Permission error: %#", err)
+			log.Printf("[WARN] RabbitMQ: Permission error: %v", err)
 		}
 
 		if resp.StatusCode >= 400 {
-			log.Printf("[WARN] RabbitMQ: Permission response: %s", resp.Status)
+			log.Printf("[WARN] RabbitMQ: Permission response: %+v", resp)
 		}
 	}
 
