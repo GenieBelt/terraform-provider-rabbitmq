@@ -152,10 +152,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	if vhost != "" {
 		log.Printf("RabbitMQ: Setting vhost permissions for %s.", vhost)
-		perms := rabbithole.Permissions{}
-		perms.Configure = ".*"
-		perms.Read = ".*"
-		perms.Write = ".*"
+		perms := rabbithole.Permissions{
+			Configure: ".*",
+			Read:      ".*",
+			Write:     ".*",
+		}
 		resp, err := rmqc.UpdatePermissionsIn(vhost, username, perms)
 
 		if err != nil {
