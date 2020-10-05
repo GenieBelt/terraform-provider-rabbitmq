@@ -38,7 +38,7 @@ resource "rabbitmq_policy" "test" {
     priority = 0
     apply_to = "all"
 
-    definition {
+    definition = {
       ha-mode = "all"
     }
   }
@@ -60,7 +60,7 @@ The `policy` block supports:
 
 * `pattern` - (Required) A pattern to match an exchange or queue name.
 * `priority` - (Required) The policy with the greater priority is applied first.
-* `apply_to` - (Required) Can either be "exchange", "queues", or "all".
+* `apply_to` - (Required) Can either be "exchanges", "queues", or "all".
 * `definition` - (Required) Key/value pairs of the policy definition. See the
   RabbitMQ documentation for definition references and examples.
 

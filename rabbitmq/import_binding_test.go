@@ -3,9 +3,9 @@ package rabbitmq
 import (
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccBinding_importBasic(t *testing.T) {
@@ -17,14 +17,14 @@ func TestAccBinding_importBasic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccBindingCheckDestroy(bindingInfo),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccBindingConfig_basic,
 				Check: testAccBindingCheck(
 					resourceName, &bindingInfo,
 				),
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,

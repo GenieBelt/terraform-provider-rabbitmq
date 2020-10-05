@@ -1,8 +1,20 @@
 dist: trusty
-sudo: false
+sudo: required
+services:
+- docker
 language: go
 go:
-- 1.8.1
+  - "1.13.x"
+
+env:
+  global:
+  - GOFLAGS=-mod=vendor GO111MODULE=on
+  - RABBITMQ_ENDPOINT="http://127.0.0.1:15672"
+  - RABBITMQ_USERNAME="guest"
+  - RABBITMQ_PASSWORD="guest"
+  jobs:
+  - RABBITMQ_VERSION=3.8
+  - RABBITMQ_VERSION=3.7
 
 install:
 # This script is used by the Travis build to install a cookie for
@@ -10,16 +22,22 @@ install:
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
-- go get github.com/kardianos/govendor
 
 script:
 - make test
-- make vendor-status
 - make vet
+- make website-test
+- docker-compose -f $(pwd)/scripts/docker-compose.yml up -d
+- $(pwd)/scripts/wait-rabbitmq-docker.sh
+- make testacc
+- docker-compose -f $(pwd)/scripts/docker-compose.yml down
+
 
 branches:
   only:
   - master
+  - travis
+
 matrix:
   fast_finish: true
   allow_failures:

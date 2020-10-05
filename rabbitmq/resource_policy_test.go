@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccPolicy(t *testing.T) {
@@ -18,13 +18,13 @@ func TestAccPolicy(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccPolicyCheckDestroy(&policy),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccPolicyConfig_basic,
 				Check: testAccPolicyCheck(
 					"rabbitmq_policy.test", &policy,
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccPolicyConfig_update,
 				Check: testAccPolicyCheck(
 					"rabbitmq_policy.test", &policy,
@@ -105,9 +105,10 @@ resource "rabbitmq_policy" "test" {
         pattern = ".*"
         priority = 0
         apply_to = "all"
-        definition {
+        definition = {
             ha-mode = "nodes"
             ha-params = "a,b,c"
+            max-length = 10000
         }
     }
 }`
@@ -134,7 +135,7 @@ resource "rabbitmq_policy" "test" {
         pattern = ".*"
         priority = 0
         apply_to = "all"
-        definition {
+        definition = {
             ha-mode = "all"
         }
     }

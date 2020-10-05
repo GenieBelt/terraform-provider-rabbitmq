@@ -3,7 +3,7 @@ package rabbitmq
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccUser_importBasic(t *testing.T) {
@@ -15,14 +15,14 @@ func TestAccUser_importBasic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy(user),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_basic,
 				Check: testAccUserCheck(
 					resourceName, &user,
 				),
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,

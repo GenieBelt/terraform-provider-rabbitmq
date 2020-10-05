@@ -3,11 +3,12 @@ package rabbitmq
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
-	"github.com/michaelklishin/rabbit-hole"
+	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourcePolicy() *schema.Resource {
@@ -21,40 +22,40 @@ func resourcePolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"vhost": &schema.Schema{
+			"vhost": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"policy": &schema.Schema{
+			"policy": {
 				Type:     schema.TypeList,
 				Required: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"pattern": &schema.Schema{
+						"pattern": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
 
-						"priority": &schema.Schema{
+						"priority": {
 							Type:     schema.TypeInt,
 							Required: true,
 						},
 
-						"apply_to": &schema.Schema{
+						"apply_to": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
 
-						"definition": &schema.Schema{
+						"definition": {
 							Type:     schema.TypeMap,
 							Required: true,
 						},
@@ -95,10 +96,10 @@ func ReadPolicy(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Unable to determine policy ID")
 	}
 
-	user := policyId[0]
+	name := policyId[0]
 	vhost := policyId[1]
 
-	policy, err := rmqc.GetPolicy(vhost, user)
+	policy, err := rmqc.GetPolicy(vhost, name)
 	if err != nil {
 		return checkDeleted(d, err)
 	}
@@ -116,7 +117,10 @@ func ReadPolicy(d *schema.ResourceData, meta interface{}) error {
 
 	policyDefinition := make(map[string]interface{})
 	for key, value := range policy.Definition {
-		if v, ok := value.([]interface{}); ok {
+		switch v := value.(type) {
+		case float64:
+			value = strconv.FormatFloat(v, 'f', -1, 64)
+		case []interface{}:
 			var nodes []string
 			for _, node := range v {
 				if n, ok := node.(string); ok {
@@ -143,7 +147,7 @@ func UpdatePolicy(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Unable to determine policy ID")
 	}
 
-	user := policyId[0]
+	name := policyId[0]
 	vhost := policyId[1]
 
 	if d.HasChange("policy") {
@@ -155,7 +159,7 @@ func UpdatePolicy(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Unable to parse policy")
 		}
 
-		if err := putPolicy(rmqc, user, vhost, policyMap); err != nil {
+		if err := putPolicy(rmqc, vhost, name, policyMap); err != nil {
 			return err
 		}
 	}
@@ -171,12 +175,12 @@ func DeletePolicy(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Unable to determine policy ID")
 	}
 
-	user := policyId[0]
+	name := policyId[0]
 	vhost := policyId[1]
 
 	log.Printf("[DEBUG] RabbitMQ: Attempting to delete policy for %s", d.Id())
 
-	resp, err := rmqc.DeletePolicy(vhost, user)
+	resp, err := rmqc.DeletePolicy(vhost, name)
 	log.Printf("[DEBUG] RabbitMQ: Policy delete response: %#v", resp)
 	if err != nil {
 		return err
@@ -215,9 +219,21 @@ func putPolicy(rmqc *rabbithole.Client, vhost string, name string, policyMap map
 		// special case for ha-mode = nodes
 		if x, ok := v["ha-mode"]; ok && x == "nodes" {
 			var nodes rabbithole.NodeNames
-			nodes = strings.Split(v["ha-params"].(string), ",")
-			v["ha-params"] = nodes
+			if _, ok := v["ha-params"].(string); ok {
+				nodes = strings.Split(v["ha-params"].(string), ",")
+				v["ha-params"] = nodes
+			}
 		}
+
+		// special case for integers
+		for key, val := range v {
+			if x, ok := val.(string); ok {
+				if x, err := strconv.ParseInt(x, 10, 64); err == nil {
+					v[key] = x
+				}
+			}
+		}
+
 		policyDefinition := rabbithole.PolicyDefinition{}
 		policyDefinition = v
 		policy.Definition = policyDefinition
