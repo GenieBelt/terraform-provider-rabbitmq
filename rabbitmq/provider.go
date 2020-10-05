@@ -82,7 +82,7 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_CLIENTKEY", ""),
 			},
 
-			"permissions_for": &schema.Schema{
+			"permissions_for": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("RABBITMQ_VHOST", ""),
@@ -157,14 +157,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		perms.Read = ".*"
 		perms.Write = ".*"
 		resp, err := rmqc.UpdatePermissionsIn(vhost, username, perms)
-		log.Printf("[DEBUG] RabbitMQ: Permission response: %+v", resp)
 
 		if err != nil {
-			log.Printf("[WARN] RabbitMQ: Permission error: %v", err)
+			return nil, err
 		}
 
+		log.Printf("[DEBUG] RabbitMQ: Permission response: %+v", resp)
 		if resp.StatusCode >= 400 {
-			log.Printf("[WARN] RabbitMQ: Permission response: %+v", resp)
+			log.Printf("[WARN] RabbitMQ: Permission response: %d", resp.StatusCode)
 		}
 	}
 
