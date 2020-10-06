@@ -156,7 +156,7 @@ func ReadBinding(d *schema.ResourceData, meta interface{}) error {
 			if v, ok := d.Get("arguments_json").(string); ok && v != "" {
 				bytes, err := json.Marshal(binding.Arguments)
 				if err != nil {
-					return fmt.Errorf("could not encode arguments as JSON: %w", err)
+					return fmt.Errorf("could not encode arguments as JSON: %v", err)
 				}
 				d.Set("arguments_json", string(bytes))
 			} else {
